@@ -1,6 +1,7 @@
 package com.springai.BootAi.Service;
 
 import org.springframework.ai.document.Document;
+import org.springframework.ai.reader.JsonMetadataGenerator;
 import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -10,6 +11,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+
 @Service
 public class AiJsonSerive {
 
@@ -26,7 +29,7 @@ public class AiJsonSerive {
         if (!loaded) {
 
             JsonReader jsonReader = new JsonReader(
-                    photoRes,
+                    photoRes,new ProductMetaData(),
                     "albumId",
                     "id",
                     "title",
@@ -44,8 +47,15 @@ public class AiJsonSerive {
         return vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(query)
-                        .topK(1)
+                        .topK(3)
                         .build()
         );
+    }
+    public class ProductMetaData implements JsonMetadataGenerator{
+
+        @Override
+        public Map<String, Object> generate(Map<String, Object> map) {
+            return Map.of("url",map.get("url"),"albumId",map.get("albumId"));
+        }
     }
 }
