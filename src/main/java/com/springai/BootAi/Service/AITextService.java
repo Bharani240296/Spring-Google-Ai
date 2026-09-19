@@ -1,8 +1,10 @@
 package com.springai.BootAi.Service;
 
 import org.springframework.ai.document.Document;
-import org.springframework.ai.reader.JsonMetadataGenerator;
 import org.springframework.ai.reader.JsonReader;
+import org.springframework.ai.reader.TextReader;
+import org.springframework.ai.transformer.splitter.TextSplitter;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,15 +13,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
-public class AiJsonSerive {
+public class AITextService {
 
     @Autowired
     private VectorStore vectorStore;
 
-    @Value("classpath:data/photos.json")
+    @Value("classpath:data/story.txt")
     private Resource photoRes;
 
     private boolean loaded = false;
@@ -28,21 +29,17 @@ public class AiJsonSerive {
 
         if (!loaded) {
 
-            JsonReader jsonReader = new JsonReader(
-                    photoRes,new ProductMetaData(),
-                    "albumId",
-                    "id",
-                    "title",
-                    "url",
-                    "thumbnailUrl"
-            );
+            TextReader textReader=new TextReader(photoRes);
 
-            List<Document> documents = jsonReader.get();
-for (Document d:documents){
-    System.out.println("list of products--- "+d.getMetadata()+"--- "+d.getId());
-}
-            vectorStore.add(documents);
 
+            List<Document> documents = textReader.get();
+            TokenTextSplitter splitter = TokenTextSplitter.builder()
+                    .withChunkSize(500)
+                    .withMinChunkSizeChars(350)
+                    .withMinChunkLengthToEmbed(5)
+                    .withMaxNumChunks(10000)
+                    .build();
+vectorStore.add(splitter.apply(documents));
             loaded = true;
         }
 
@@ -52,12 +49,5 @@ for (Document d:documents){
                         .topK(3)
                         .build()
         );
-    }
-    public class ProductMetaData implements JsonMetadataGenerator{
-
-        @Override
-        public Map<String, Object> generate(Map<String, Object> map) {
-            return Map.of("url",map.get("url"),"albumId",map.get("albumId"));
-        }
     }
 }
