@@ -19,7 +19,7 @@ public class AiJsonSerive {
     @Autowired
     private VectorStore vectorStore;
 
-    @Value("classpath:data/photos.json")
+    @Value("classpath:wrapData/photos.json")
     private Resource photoRes;
 
     private boolean loaded = false;
